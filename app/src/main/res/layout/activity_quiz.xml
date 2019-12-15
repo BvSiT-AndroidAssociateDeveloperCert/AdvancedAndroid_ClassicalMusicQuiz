@@ -18,15 +18,29 @@
     tools:layout_editor_absoluteX="0dp"
     tools:layout_editor_absoluteY="81dp">
 
+    <!-- Played around with the layout: set the player above the buttons -->
+
+    <!--DONE (1): Replace the Composer ImageView with a SimpleExoPlayerView that occupies the top half of your screen.-->
+
+    <com.google.android.exoplayer2.ui.SimpleExoPlayerView
+        android:id="@+id/exo_player_view"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toTopOf="@id/horizontalHalf"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <android.support.constraint.Guideline
         android:id="@+id/horizontalHalf"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        app:layout_constraintGuide_percent="0.5"
-        tools:layout_editor_absoluteX="0dp"
-        tools:layout_editor_absoluteY="256dp" />
+        app:layout_constraintGuide_percent="0.56" />
 
+<!-- tools:layout_editor_absoluteY="256dp" />-->
+
+<!--
     <Button
         android:id="@+id/buttonA"
         android:layout_width="0dp"
@@ -36,11 +50,31 @@
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toLeftOf="@+id/buttonB"
         app:layout_constraintTop_toTopOf="@+id/horizontalHalf" />
+-->
+
+    <!-- Played around with the layout: added a margin to the buttons -->
+    <Button
+        android:id="@+id/buttonA"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginLeft="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginRight="16dp"
+        android:layout_marginBottom="16dp"
+        app:layout_constraintBottom_toTopOf="@+id/buttonC"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toLeftOf="@+id/buttonB"
+        app:layout_constraintTop_toTopOf="@+id/horizontalHalf"
+ />
 
     <Button
         android:id="@+id/buttonC"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:layout_marginLeft="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginRight="16dp"
+        android:layout_marginBottom="16dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toLeftOf="@+id/buttonD"
@@ -50,6 +84,10 @@
         android:id="@+id/buttonB"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:layout_marginLeft="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginRight="16dp"
+        android:layout_marginBottom="16dp"
         app:layout_constraintBottom_toTopOf="@+id/buttonD"
         app:layout_constraintLeft_toRightOf="@+id/buttonA"
         app:layout_constraintRight_toRightOf="parent"
@@ -59,22 +97,16 @@
         android:id="@+id/buttonD"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:layout_marginLeft="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginRight="16dp"
+        android:layout_marginBottom="16dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toRightOf="@+id/buttonC"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/buttonB" />
 
-    <!--TODO (1): Replace the Composer ImageView with a SimpleExoPlayerView that occupies the top half of your screen.-->
 
-    <com.google.android.exoplayer2.ui.SimpleExoPlayerView
-        android:id="@+id/exo_player_view"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:layout_constraintBottom_toTopOf="@+id/horizontalHalf"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        />
 
 <!--
     <ImageView
