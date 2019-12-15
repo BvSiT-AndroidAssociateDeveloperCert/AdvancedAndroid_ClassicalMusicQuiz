@@ -17,7 +17,6 @@
 package com.example.android.classicalmusicquiz;
 
 import android.content.Intent;
-import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
@@ -26,26 +25,36 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.google.android.exoplayer2.DefaultLoadControl;
+import com.google.android.exoplayer2.ExoPlaybackException;
+import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.ExoPlayerFactory;
+import com.google.android.exoplayer2.LoadControl;
 import com.google.android.exoplayer2.SimpleExoPlayer;
+import com.google.android.exoplayer2.Timeline;
 import com.google.android.exoplayer2.extractor.DefaultExtractorsFactory;
 import com.google.android.exoplayer2.source.ExtractorMediaSource;
+import com.google.android.exoplayer2.source.MediaSource;
+import com.google.android.exoplayer2.source.TrackGroupArray;
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
+import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
+import com.google.android.exoplayer2.trackselection.TrackSelector;
 import com.google.android.exoplayer2.ui.SimpleExoPlayerView;
-import com.google.android.exoplayer2.upstream.DataSource;
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
 import com.google.android.exoplayer2.util.Util;
 
 import java.util.ArrayList;
 
-public class QuizActivity extends AppCompatActivity implements View.OnClickListener {
-
+// TODO (1): Have this Activity implement ExoPlayer.EventListener and add the required methods.
+public class QuizActivity extends AppCompatActivity implements View.OnClickListener,
+        ExoPlayer.EventListener
+{
+    private static final String TAG = "QuizActivity";
     private static final int CORRECT_ANSWER_DELAY_MILLIS = 1000;
     private static final String REMAINING_SONGS_KEY = "remaining_songs";
     private int[] mButtonIDs = {R.id.buttonA, R.id.buttonB, R.id.buttonC, R.id.buttonD};
@@ -55,20 +64,19 @@ public class QuizActivity extends AppCompatActivity implements View.OnClickListe
     private int mCurrentScore;
     private int mHighScore;
     private Button[] mButtons;
-
-    private SimpleExoPlayerView mPlayerView;
     private SimpleExoPlayer mExoPlayer;
+    private SimpleExoPlayerView mPlayerView;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_quiz);
 
-        // DONE (2): Replace the ImageView with the SimpleExoPlayerView, and remove the method calls on the composerView.
-        //ImageView composerView = (ImageView) findViewById(R.id.composerView);
-        mPlayerView = findViewById(R.id.exo_player_view);
 
-        // TODO (1): Create a layout file called exo_playback_control_view_x to override the playback control layout.
+        // Initialize the player view.
+        mPlayerView = (SimpleExoPlayerView) findViewById(R.id.exo_player_view);
+
 
         boolean isNewGame = !getIntent().hasExtra(REMAINING_SONGS_KEY);
 
@@ -89,11 +97,9 @@ public class QuizActivity extends AppCompatActivity implements View.OnClickListe
         mQuestionSampleIDs = QuizUtils.generateQuestion(mRemainingSampleIDs);
         mAnswerSampleID = QuizUtils.getCorrectAnswerID(mQuestionSampleIDs);
 
-        // DONE (3): Replace the default artwork in the SimpleExoPlayerView with the question mark drawable.
-        Bitmap bmp = BitmapFactory.decodeResource(getResources(),R.drawable.question_mark);
-        mPlayerView.setDefaultArtwork(bmp);
-        // Load the image of the composer for the answer into the ImageView.
-        //composerView.setImageBitmap(Sample.getComposerArtBySampleID(this, mAnswerSampleID));
+        // Load the question mark as the background image until the user answers the question.
+        mPlayerView.setDefaultArtwork(BitmapFactory.decodeResource
+                (getResources(), R.drawable.question_mark));
 
         // If there is only one answer left, end the game.
         if (mQuestionSampleIDs.size() < 2) {
@@ -104,52 +110,18 @@ public class QuizActivity extends AppCompatActivity implements View.OnClickListe
         // Initialize the buttons with the composers names.
         mButtons = initializeButtons(mQuestionSampleIDs);
 
-        // DONE (4): Create a Sample object using the Sample.getSampleByID() method and passing in mAnswerSampleID;
-
         Sample answerSample = Sample.getSampleByID(this, mAnswerSampleID);
+
         if (answerSample == null) {
             Toast.makeText(this, getString(R.string.sample_not_found_error),
                     Toast.LENGTH_SHORT).show();
             return;
         }
 
+        // Initialize the player.
         initializePlayer(Uri.parse(answerSample.getUri()));
-        // DONE (5): Create a method called initializePlayer() that takes a Uri as an argument and call it here, passing in the Sample URI.
-
-
     }
 
-
-    // In initializePayer
-    // DONE (6): Instantiate a SimpleExoPlayer object using DefaultTrackSelector and DefaultLoadControl.
-    // DONE (7): Prepare the MediaSource using DefaultDataSourceFactory and DefaultExtractorsFactory, as well as the Sample URI you passed in.
-    // DONE (8): Prepare the ExoPlayer with the MediaSource, start playing the sample and set the SimpleExoPlayer to the SimpleExoPlayerView.
-
-    private void initializePlayer(Uri sampleUri){
-        if (mExoPlayer==null){
-            mExoPlayer = ExoPlayerFactory.newSimpleInstance(this,new DefaultTrackSelector(),new DefaultLoadControl());
-            String userAgent = Util.getUserAgent(this, "Play Audio");
-            ExtractorMediaSource mediaSource = new ExtractorMediaSource(
-                    sampleUri,
-                    new DefaultDataSourceFactory(this, userAgent),
-                    new DefaultExtractorsFactory(),
-                    null,
-                    null
-            );
-            mExoPlayer.prepare(mediaSource);
-            mExoPlayer.setPlayWhenReady(true);
-            mPlayerView.setPlayer(mExoPlayer);
-        }
-    }
-
-    /**
-     * Release ExoPlayer.
-     */
-    private void releasePlayer() {
-        mExoPlayer.stop();
-        mExoPlayer.release();
-        mExoPlayer = null;
-    }
 
     /**
      * Initializes the button to the correct views, and sets the text to the composers names,
@@ -170,6 +142,44 @@ public class QuizActivity extends AppCompatActivity implements View.OnClickListe
             }
         }
         return buttons;
+    }
+
+
+    /**
+     * Initialize ExoPlayer.
+     * @param mediaUri The URI of the sample to play.
+     */
+    private void initializePlayer(Uri mediaUri) {
+        if (mExoPlayer == null) {
+            // Create an instance of the ExoPlayer.
+            TrackSelector trackSelector = new DefaultTrackSelector();
+            LoadControl loadControl = new DefaultLoadControl();
+            mExoPlayer = ExoPlayerFactory.newSimpleInstance(this, trackSelector, loadControl);
+            mPlayerView.setPlayer(mExoPlayer);
+
+
+            // TODO (2): Set the ExoPlayer.EventListener to this activity
+
+            mExoPlayer.addListener(this);
+
+
+            // Prepare the MediaSource.
+            String userAgent = Util.getUserAgent(this, "ClassicalMusicQuiz");
+            MediaSource mediaSource = new ExtractorMediaSource(mediaUri, new DefaultDataSourceFactory(
+                    this, userAgent), new DefaultExtractorsFactory(), null, null);
+            mExoPlayer.prepare(mediaSource);
+            mExoPlayer.setPlayWhenReady(true);
+        }
+    }
+
+
+    /**
+     * Release ExoPlayer.
+     */
+    private void releasePlayer() {
+        mExoPlayer.stop();
+        mExoPlayer.release();
+        mExoPlayer = null;
     }
 
 
@@ -218,7 +228,6 @@ public class QuizActivity extends AppCompatActivity implements View.OnClickListe
         handler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                // DONE (9): Stop the playback when you go to the next question.
                 mExoPlayer.stop();
                 Intent nextQuestionIntent = new Intent(QuizActivity.this, QuizActivity.class);
                 nextQuestionIntent.putExtra(REMAINING_SONGS_KEY, mRemainingSampleIDs);
@@ -226,20 +235,19 @@ public class QuizActivity extends AppCompatActivity implements View.OnClickListe
                 startActivity(nextQuestionIntent);
             }
         }, CORRECT_ANSWER_DELAY_MILLIS);
-
     }
 
     /**
-     * Disables the buttons and changes the background colors to show the correct answer.
+     * Disables the buttons and changes the background colors and player art to
+     * show the correct answer.
      */
     private void showCorrectAnswer() {
+        mPlayerView.setDefaultArtwork(Sample.getComposerArtBySampleID(this, mAnswerSampleID));
         for (int i = 0; i < mQuestionSampleIDs.size(); i++) {
             int buttonSampleID = mQuestionSampleIDs.get(i);
 
-            // DONE (10): Change the default artwork in the SimpleExoPlayerView to show the picture of the composer, when the user has answered the question.
-            mPlayerView.setDefaultArtwork(Sample.getComposerArtBySampleID(this,mAnswerSampleID));
-
             mButtons[i].setEnabled(false);
+
             if (buttonSampleID == mAnswerSampleID) {
                 mButtons[i].getBackground().setColorFilter(ContextCompat.getColor
                                 (this, android.R.color.holo_green_light),
@@ -254,10 +262,53 @@ public class QuizActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
-    // DONE (11): Override onDestroy() to stop and release the player when the Activity is destroyed.
+
+    /**
+     * Release the player when the activity is destroyed.
+     */
     @Override
     protected void onDestroy() {
         super.onDestroy();
         releasePlayer();
     }
+
+    @Override
+    public void onTimelineChanged(Timeline timeline, Object manifest) {
+
+    }
+
+    @Override
+    public void onTracksChanged(TrackGroupArray trackGroups, TrackSelectionArray trackSelections) {
+
+    }
+
+    @Override
+    public void onLoadingChanged(boolean isLoading) {
+
+    }
+
+    @Override
+    public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
+        Log.d(TAG, "onPlayerStateChanged: playWhenReady"+playWhenReady);
+        Log.d(TAG, "onPlayerStateChanged: playbackState"+playbackState);
+
+        if (playWhenReady) {
+            Log.d(TAG, "onPlayerStateChanged: Started playing");
+        }
+        else {
+            Log.d(TAG, "onPlayerStateChanged: Stopped playing");
+        }
+    }
+
+    @Override
+    public void onPlayerError(ExoPlaybackException error) {
+
+    }
+
+    @Override
+    public void onPositionDiscontinuity() {
+
+    }
+
+    // TODO (3): Add conditional logging statements to the onPlayerStateChanged() method that log when ExoPlayer is playing or paused.
 }
